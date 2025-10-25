@@ -4,6 +4,10 @@ Projek gabut yang gw bikin sekalian belajar flutter, masih tahap prototipe.
 
 ---
 
+# Snapshot
+
+---
+
 ## 🚀 Fitur Utama
 
 - ✅ **Tambah & Hapus Habit** — Buat kebiasaan baru dengan mudah.  
