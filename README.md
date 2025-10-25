@@ -38,4 +38,4 @@ Projek gabut yang gw bikin sekalian belajar flutter, masih tahap prototipe.
 
 ## 📥 Unduh Aplikasi
 
-👉 [Download StreakUp (Prototype APK)](https://github.com/17frn/StreakUp-Mobile/releases/latest)
+👉 [Download (Prototype APK)](https://github.com/17frn/StreakUp-Mobile/releases/latest)
