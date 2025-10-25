@@ -4,7 +4,12 @@ Projek gabut yang gw bikin sekalian belajar flutter, masih tahap prototipe.
 
 ---
 
-# Snapshot
+# 📸 Snapshot
+
+| Beranda | Add Habit | Detail Habit | Edit Waktu | Statistik |
+|:--------:|:----------:|:-----------:|:--------------:|:-----------:|
+| ![Beranda](Screenshot_scrcpy_20251025131855.png) | ![Add Habit](Screenshot_scrcpy_20251025131935.png) | ![Edit Waktu](Screenshot_scrcpy_20251025132047.png) | ![Detail Habit](Screenshot_scrcpy_20251025132117.png) | ![Statistik](Screenshot_scrcpy_20251025132342.png) |
+
 
 ---
 
@@ -15,7 +20,7 @@ Projek gabut yang gw bikin sekalian belajar flutter, masih tahap prototipe.
 - 📊 **Statistik Sederhana** — Lihat progres kebiasaan secara visual (coming soon).  
 - 📴 **Offline Mode** — Semua data disimpan secara lokal di perangkat.  
 - 🧩 **UI Minimalis** — Fokus pada fungsi utama tanpa gangguan.
-
+- 
 ---
 
 ## 🧱 Teknologi yang Digunakan
