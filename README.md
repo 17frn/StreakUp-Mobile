@@ -13,7 +13,7 @@ Projek gabut yang gw bikin sekalian belajar flutter, masih tahap prototipe.
 
 ---
 
-## 🚀 Fitur Utama
+## Fitur Utama
 
 - ✅ **Tambah & Hapus Habit** — Buat kebiasaan baru dengan mudah.  
 - 📅 **Pelacakan Harian** — Tandai habit yang sudah dilakukan setiap hari.  
@@ -23,7 +23,7 @@ Projek gabut yang gw bikin sekalian belajar flutter, masih tahap prototipe.
 - 
 ---
 
-## 🧱 Teknologi yang Digunakan
+## Teknologi yang Digunakan
 
 - [Flutter](https://flutter.dev/)  
 - [Dart](https://dart.dev/)  
@@ -31,7 +31,7 @@ Projek gabut yang gw bikin sekalian belajar flutter, masih tahap prototipe.
 
 ---
 
-## 📦 Status Proyek
+## Status Proyek
 
 🔧 **Tahap:** Prototipe  
 💡 **Rencana Pengembangan Berikutnya:**
