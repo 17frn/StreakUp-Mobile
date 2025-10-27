@@ -3,7 +3,6 @@ import 'package:path/path.dart';
 import '../models/habit.dart';
 
 class DatabaseHelper {
-  // Singleton pattern
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   static Database? _database;
 
@@ -13,14 +12,14 @@ class DatabaseHelper {
 
   DatabaseHelper._internal();
 
-  // Get database instance
+  // Get db
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDatabase();
     return _database!;
   }
 
-  // Initialize database
+  // Initialize db
   Future<Database> _initDatabase() async {
     String path = join(await getDatabasesPath(), 'habit_tracker.db');
     
@@ -31,7 +30,6 @@ class DatabaseHelper {
     );
   }
 
-  // Create tables
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE habits(
@@ -41,12 +39,13 @@ class DatabaseHelper {
         icon TEXT NOT NULL,
         completedDates TEXT,
         startTime TEXT,
-        endTime TEXT
+        endTime TEXT,
+        notificationEnabled INTEGER DEFAULT 0,
+        reminderMinutes INTEGER DEFAULT 15
       )
     ''');
   }
 
-  // Insert new habit
   Future<int> insertHabit(Habit habit) async {
     final db = await database;
     return await db.insert(
@@ -56,7 +55,6 @@ class DatabaseHelper {
     );
   }
 
-  // Get all habits
   Future<List<Habit>> getHabits() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
@@ -69,7 +67,6 @@ class DatabaseHelper {
     });
   }
 
-  // Get single habit by id
   Future<Habit?> getHabit(int id) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
@@ -82,7 +79,6 @@ class DatabaseHelper {
     return Habit.fromMap(maps.first);
   }
 
-  // Update habit
   Future<int> updateHabit(Habit habit) async {
     final db = await database;
     return await db.update(
@@ -93,7 +89,6 @@ class DatabaseHelper {
     );
   }
 
-  // Delete habit
   Future<int> deleteHabit(int id) async {
     final db = await database;
     return await db.delete(
@@ -103,20 +98,17 @@ class DatabaseHelper {
     );
   }
 
-  // Delete all habits
   Future<int> deleteAllHabits() async {
     final db = await database;
     return await db.delete('habits');
   }
 
-  // Get habits count
   Future<int> getHabitsCount() async {
     final db = await database;
     final result = await db.rawQuery('SELECT COUNT(*) FROM habits');
     return Sqflite.firstIntValue(result) ?? 0;
   }
 
-  // Search habits by name
   Future<List<Habit>> searchHabits(String query) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
@@ -130,7 +122,6 @@ class DatabaseHelper {
     });
   }
 
-  // Close database
   Future<void> close() async {
     final db = await database;
     db.close();

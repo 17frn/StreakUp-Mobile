@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/habit.dart';
 import '../database/database_helper.dart';
+import '../services/notification_service.dart';
 
 class HabitTimeSettingsPage extends StatefulWidget {
   final Habit habit;
@@ -13,12 +14,22 @@ class HabitTimeSettingsPage extends StatefulWidget {
 
 class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
   final DatabaseHelper _dbHelper = DatabaseHelper();
+  final NotificationService _notificationService = NotificationService();
+  
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
+  bool _notificationEnabled = false;
+  int _reminderMinutes = 15;
+  bool _endReminderEnabled = false;
+  int _endReminderMinutes = 30;
 
   @override
   void initState() {
     super.initState();
+    _loadSettings();
+  }
+
+  void _loadSettings() {
     // Load existing times if available
     if (widget.habit.startTime != null) {
       final parts = widget.habit.startTime!.split(':');
@@ -34,6 +45,10 @@ class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
         minute: int.parse(parts[1]),
       );
     }
+
+    // Load notification settings
+    _notificationEnabled = widget.habit.notificationEnabled;
+    _reminderMinutes = widget.habit.reminderMinutes;
   }
 
   Future<void> _selectStartTime() async {
@@ -94,17 +109,58 @@ class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
   }
 
   Future<void> _saveTimeSettings() async {
+    // Check if notification permission granted
+    if (_notificationEnabled) {
+      final hasPermission = await _notificationService.areNotificationsEnabled();
+      if (!hasPermission) {
+        final granted = await _notificationService.requestPermission();
+        if (!granted) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Izin notifikasi ditolak. Aktifkan di pengaturan.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          setState(() => _notificationEnabled = false);
+          return;
+        }
+      }
+    }
+
     final updatedHabit = widget.habit.copyWith(
       startTime: _startTime != null ? _formatTime(_startTime) : null,
       endTime: _endTime != null ? _formatTime(_endTime) : null,
+      notificationEnabled: _notificationEnabled,
+      reminderMinutes: _reminderMinutes,
     );
 
     await _dbHelper.updateHabit(updatedHabit);
 
+    // Schedule notifications
+    if (_notificationEnabled && _startTime != null) {
+      await _notificationService.scheduleHabitReminder(
+        habit: updatedHabit,
+        minutesBefore: _reminderMinutes,
+      );
+    } else {
+      // Cancel notifications if disabled
+      await _notificationService.cancelHabitNotifications(widget.habit.id!);
+    }
+
+    // Schedule end reminder
+    if (_endReminderEnabled && _endTime != null) {
+      await _notificationService.scheduleHabitEndingReminder(
+        habit: updatedHabit,
+        minutesBefore: _endReminderMinutes,
+      );
+    }
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Waktu berhasil disimpan'),
+          content: Text('Pengaturan berhasil disimpan'),
           backgroundColor: Color(0xFF4CAF50),
         ),
       );
@@ -116,19 +172,44 @@ class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
     final updatedHabit = widget.habit.copyWith(
       startTime: null,
       endTime: null,
+      notificationEnabled: false,
+      reminderMinutes: 15,
     );
 
     await _dbHelper.updateHabit(updatedHabit);
+
+    // Cancel all notifications
+    await _notificationService.cancelHabitNotifications(widget.habit.id!);
 
     if (mounted) {
       setState(() {
         _startTime = null;
         _endTime = null;
+        _notificationEnabled = false;
+        _reminderMinutes = 15;
+        _endReminderEnabled = false;
+        _endReminderMinutes = 30;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Waktu berhasil dihapus'),
+          content: Text('Pengaturan waktu dan notifikasi dihapus'),
           backgroundColor: Color(0xFFFF6B35),
+        ),
+      );
+    }
+  }
+
+  Future<void> _testNotification() async {
+    await _notificationService.showInstantNotification(
+      title: '🔔 Test Notifikasi',
+      body: 'Notifikasi untuk habit "${widget.habit.name}" berfungsi!',
+    );
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Notifikasi test dikirim!'),
+          duration: Duration(seconds: 1),
         ),
       );
     }
@@ -138,8 +219,15 @@ class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Atur Waktu'),
+        title: const Text('Atur Waktu & Pengingat'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_active),
+            tooltip: 'Test Notifikasi',
+            onPressed: _testNotification,
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -214,7 +302,7 @@ class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Atur waktu mulai dan selesai untuk kegiatan ini. Setiap 24 jam, progress akan otomatis bertambah.',
+                      'Atur waktu dan aktifkan pengingat untuk habit ini.',
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.grey[700],
@@ -350,6 +438,101 @@ class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
             ),
             const SizedBox(height: 32),
 
+            // Notification Section
+            const Divider(),
+            const SizedBox(height: 16),
+            
+            Row(
+              children: [
+                const Icon(Icons.notifications_active, color: Color(0xFF0077BE)),
+                const SizedBox(width: 12),
+                const Text(
+                  'Pengingat Notifikasi',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Enable Notification Switch
+            Card(
+              child: SwitchListTile(
+                title: const Text('Aktifkan Pengingat'),
+                subtitle: const Text('Notifikasi sebelum waktu habit dimulai'),
+                value: _notificationEnabled,
+                activeColor: const Color(0xFF0077BE),
+                onChanged: _startTime != null
+                    ? (value) {
+                        setState(() => _notificationEnabled = value);
+                      }
+                    : null,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Reminder Time Dropdown
+            if (_notificationEnabled)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Ingatkan saya',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<int>(
+                        value: _reminderMinutes,
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 5,
+                            child: Text('5 menit sebelumnya'),
+                          ),
+                          DropdownMenuItem(
+                            value: 10,
+                            child: Text('10 menit sebelumnya'),
+                          ),
+                          DropdownMenuItem(
+                            value: 15,
+                            child: Text('15 menit sebelumnya'),
+                          ),
+                          DropdownMenuItem(
+                            value: 30,
+                            child: Text('30 menit sebelumnya'),
+                          ),
+                          DropdownMenuItem(
+                            value: 60,
+                            child: Text('1 jam sebelumnya'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          setState(() => _reminderMinutes = value!);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            const SizedBox(height: 32),
+
             // Save Button
             SizedBox(
               width: double.infinity,
@@ -364,7 +547,7 @@ class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
                   ),
                 ),
                 child: const Text(
-                  'Simpan Waktu',
+                  'Simpan Pengaturan',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -386,11 +569,13 @@ class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
                     ),
                   ),
                   child: const Text(
-                    'Hapus Waktu',
+                    'Hapus Semua Pengaturan',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
+            
+            const SizedBox(height: 24),
           ],
         ),
       ),
