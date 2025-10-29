@@ -179,7 +179,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Made with love',
+                          '17frn',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],
