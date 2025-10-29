@@ -157,7 +157,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   _buildSettingCard(
                     icon: Icons.info_outline,
                     title: 'Version',
-                    subtitle: '1.0.0',
+                    subtitle: '0.2',
                   ),
                   const SizedBox(height: 8),
                   _buildSettingCard(
@@ -179,7 +179,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '17frn',
+                          'github.com/17frn',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],
