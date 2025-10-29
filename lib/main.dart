@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'pages/home_page.dart';
 import 'pages/statistics_page.dart';
+import 'pages/settings_page.dart';
 import 'widgets/bottom_navigation.dart';
 import 'services/notification_service.dart';
 
@@ -65,6 +66,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _pages = [
     const HomePage(),
     const StatisticsPage(),
+    const SettingsPage(), // Akan kita buat
   ];
 
   @override
