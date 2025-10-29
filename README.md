@@ -1,7 +1,10 @@
-# 🌟 StreakUp
+# 📱 StreakUp - Habit Tracker App
 
 Projek gabut yang gw bikin sekalian belajar flutter, masih tahap prototipe.
 
+![Flutter](https://img.shields.io/badge/Flutter-3.35.6-02569B?logo=flutter)
+![Dart](https://img.shields.io/badge/Dart-3.9.2-0175C2?logo=dart)
+![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS-lightgrey)
 ---
 
 # 📸 Snapshot
@@ -20,24 +23,33 @@ Projek gabut yang gw bikin sekalian belajar flutter, masih tahap prototipe.
 - 📊 **Statistik Sederhana** — Lihat progres kebiasaan secara visual (coming soon).  
 - 📴 **Offline Mode** — Semua data disimpan secara lokal di perangkat.  
 - 🧩 **UI Minimalis** — Fokus pada fungsi utama tanpa gangguan.
-- 
----
-
-## Teknologi yang Digunakan
-
-- [Flutter](https://flutter.dev/)  
-- [Dart](https://dart.dev/)  
-- SQLite (lokal database)  
-
+  
 ---
 
 ## Status Proyek
 
 🔧 **Tahap:** Prototipe  
 💡 **Rencana Pengembangan Berikutnya:**
-- Penambahan notifikasi pengingat  
+- ~~Penambahan notifikasi pengingat~~
 - Statistik mingguan  
 - Sinkronisasi data (opsional, bila versi online dirilis)
+- Dark mode support
+- Multiple timezone support
+- Habit categories
+- Custom themes
+- Social features (share progress)
+- Achievement system
+- Graphs and charts
+
+---
+
+## 🚀 Getting Started
+### Prerequisites
+
+- Flutter SDK (3.0.0 or higher)
+- Dart SDK (2.18.0 or higher)
+- Android Studio / VS Code
+- Android device or emulator / iOS device or simulator
 
 ---
 
