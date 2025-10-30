@@ -157,7 +157,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   _buildSettingCard(
                     icon: Icons.info_outline,
                     title: 'Version',
-                    subtitle: '0.2',
+                    subtitle: '0.3',
                   ),
                   const SizedBox(height: 8),
                   _buildSettingCard(
