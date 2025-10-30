@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     
     <application
-        android:label="habbit_tracker_app"
+        android:label="StreakUp"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         
