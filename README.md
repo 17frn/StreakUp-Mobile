@@ -11,7 +11,7 @@ Projek gabut yang gw bikin sekalian belajar flutter, masih tahap prototipe.
 
 | Beranda | Add Habit | Detail Habit | Menu Edit | Statistik |
 |:--------:|:----------:|:-----------:|:--------------:|:-----------:|
-| ![Beranda](Screenshot_scrcpy_20251025131855.png) | ![Add Habit](Screenshot_scrcpy_20251025131935.png) | ![Edit Waktu](Screenshot_scrcpy_20251025132047.png) | ![Detail Habit](Screenshot_scrcpy_20251025132117.png) | ![Statistik](Screenshot_scrcpy_20251025132342.png) |
+| ![Beranda](/img/base/dashboard.png) | ![Add Habit](Screenshot_scrcpy_20251025131935.png) | ![Edit Waktu](Screenshot_scrcpy_20251025132047.png) | ![Detail Habit](Screenshot_scrcpy_20251025132117.png) | ![Statistik](Screenshot_scrcpy_20251025132342.png) |
 
 
 ---
