@@ -15,9 +15,22 @@ class NotificationService {
   Future<void> initialize() async {
     if (_initialized) return;
 
-    // Initialize timezone
+    // Initialize timezone FIRST
     tz.initializeTimeZones();
-    tz.setLocalLocation(tz.getLocation('Asia/Jakarta')); // Set ke timezone Indonesia
+    
+    // Get device timezone
+    final String? timeZoneName = await FlutterLocalNotificationsPlugin()
+        .getNotificationAppLaunchDetails()
+        .then((_) {
+      // Try to get system timezone
+      try {
+        return tz.local.name;
+      } catch (e) {
+        return 'Asia/Jakarta'; // Fallback
+      }
+    });
+    
+    tz.setLocalLocation(tz.getLocation(timeZoneName ?? 'Asia/Jakarta'));
 
     // Android settings
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -39,7 +52,12 @@ class NotificationService {
       onDidReceiveNotificationResponse: _onNotificationTap,
     );
 
+    // Request permissions immediately
+    await requestPermission();
+
     _initialized = true;
+    
+    print('✅ Notification service initialized with timezone: ${tz.local.name}');
   }
 
   /// Handle notification tap
@@ -54,7 +72,16 @@ class NotificationService {
         AndroidFlutterLocalNotificationsPlugin>();
     
     if (android != null) {
-      return await android.requestNotificationsPermission() ?? false;
+      // Request notifications permission
+      final notifGranted = await android.requestNotificationsPermission();
+      
+      // Request exact alarm permission (Android 12+)
+      final alarmGranted = await android.requestExactAlarmsPermission();
+      
+      print('📱 Notification permission: $notifGranted');
+      print('⏰ Exact alarm permission: $alarmGranted');
+      
+      return notifGranted ?? false;
     }
     
     return true; // iOS handles permission automatically
@@ -161,20 +188,25 @@ class NotificationService {
   /// Get notification details
   NotificationDetails _notificationDetails() {
     const androidDetails = AndroidNotificationDetails(
-      'habit_reminders', // Channel ID
-      'Pengingat Habit', // Channel name
+      'habit_reminders',
+      'Pengingat Habit',
       channelDescription: 'Notifikasi pengingat untuk habit harian',
-      importance: Importance.high,
+      importance: Importance.max,
       priority: Priority.high,
       icon: '@mipmap/ic_launcher',
       enableVibration: true,
       playSound: true,
+      visibility: NotificationVisibility.public,
+      autoCancel: false,
+      ongoing: false,
+      showWhen: true,
     );
 
     const iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
+      sound: 'default',
     );
 
     return const NotificationDetails(
@@ -206,5 +238,19 @@ class NotificationService {
       body,
       _notificationDetails(),
     );
+  }
+
+  /// Get list of pending notifications (for debugging)
+  Future<List<PendingNotificationRequest>> getPendingNotifications() async {
+    return await _notifications.pendingNotificationRequests();
+  }
+
+  /// Print all pending notifications (debug)
+  Future<void> debugPendingNotifications() async {
+    final pending = await getPendingNotifications();
+    print('📋 Pending notifications: ${pending.length}');
+    for (var notif in pending) {
+      print('  - ID: ${notif.id}, Title: ${notif.title}, Body: ${notif.body}');
+    }
   }
 }
