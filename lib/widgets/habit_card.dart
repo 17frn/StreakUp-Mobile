@@ -21,6 +21,11 @@ class HabitCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isCompleted = habit.isCompletedToday();
     final streak = habit.getCurrentStreak();
+    final autoCheckService = HabitAutoCheckService();
+    final hasTimeSet = habit.startTime != null && habit.endTime != null;
+    final isWithinTime = hasTimeSet && autoCheckService.isWithinTimeRange(habit);
+    final remainingTime = hasTimeSet ? autoCheckService.getRemainingTime(habit) : '';
+    final hasNoteToday = habit.hasNoteForDate(DateTime.now());
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -105,6 +110,37 @@ class HabitCard extends StatelessWidget {
                                 fontSize: 12,
                                 color: Color(0xFFFF6B35),
                                 fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    // Time Info
+                    if (hasTimeSet)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.schedule,
+                              size: 14,
+                              color: isWithinTime 
+                                  ? const Color(0xFF4CAF50) 
+                                  : Colors.grey[600],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              isWithinTime 
+                                  ? remainingTime
+                                  : '${habit.startTime} - ${habit.endTime}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isWithinTime 
+                                    ? const Color(0xFF4CAF50) 
+                                    : Colors.grey[600],
+                                fontWeight: isWithinTime 
+                                    ? FontWeight.w600 
+                                    : FontWeight.normal,
                               ),
                             ),
                           ],

@@ -3,6 +3,7 @@ import 'package:path/path.dart';
 import '../models/habit.dart';
 
 class DatabaseHelper {
+  // Singleton pattern
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   static Database? _database;
 
@@ -12,24 +13,25 @@ class DatabaseHelper {
 
   DatabaseHelper._internal();
 
-  // Get db
+  // Get database instance
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDatabase();
     return _database!;
   }
 
-  // Initialize db
+  // Initialize database
   Future<Database> _initDatabase() async {
     String path = join(await getDatabasesPath(), 'habit_tracker.db');
-    
     return await openDatabase(
       path,
-      version: 1,
+      version: 2, // UPDATED VERSION - untuk trigger upgrade
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade, // ADDED - untuk upgrade dari versi lama
     );
   }
 
+  // Create tables
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE habits(
@@ -41,11 +43,23 @@ class DatabaseHelper {
         startTime TEXT,
         endTime TEXT,
         notificationEnabled INTEGER DEFAULT 0,
-        reminderMinutes INTEGER DEFAULT 15
+        reminderMinutes INTEGER DEFAULT 15,
+        notes TEXT
       )
     ''');
   }
 
+  // Upgrade database - ADDED
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Add missing columns for version 2
+      await db.execute('ALTER TABLE habits ADD COLUMN notificationEnabled INTEGER DEFAULT 0');
+      await db.execute('ALTER TABLE habits ADD COLUMN reminderMinutes INTEGER DEFAULT 15');
+      await db.execute('ALTER TABLE habits ADD COLUMN notes TEXT');
+    }
+  }
+
+  // Insert new habit
   Future<int> insertHabit(Habit habit) async {
     final db = await database;
     return await db.insert(
@@ -55,18 +69,19 @@ class DatabaseHelper {
     );
   }
 
+  // Get all habits
   Future<List<Habit>> getHabits() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
       'habits',
       orderBy: 'id DESC',
     );
-    
     return List.generate(maps.length, (i) {
       return Habit.fromMap(maps[i]);
     });
   }
 
+  // Get single habit by id
   Future<Habit?> getHabit(int id) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
@@ -74,11 +89,11 @@ class DatabaseHelper {
       where: 'id = ?',
       whereArgs: [id],
     );
-    
     if (maps.isEmpty) return null;
     return Habit.fromMap(maps.first);
   }
 
+  // Update habit
   Future<int> updateHabit(Habit habit) async {
     final db = await database;
     return await db.update(
@@ -89,6 +104,7 @@ class DatabaseHelper {
     );
   }
 
+  // Delete habit
   Future<int> deleteHabit(int id) async {
     final db = await database;
     return await db.delete(
@@ -98,17 +114,20 @@ class DatabaseHelper {
     );
   }
 
+  // Delete all habits
   Future<int> deleteAllHabits() async {
     final db = await database;
     return await db.delete('habits');
   }
 
+  // Get habits count
   Future<int> getHabitsCount() async {
     final db = await database;
     final result = await db.rawQuery('SELECT COUNT(*) FROM habits');
     return Sqflite.firstIntValue(result) ?? 0;
   }
 
+  // Search habits by name
   Future<List<Habit>> searchHabits(String query) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
@@ -116,12 +135,12 @@ class DatabaseHelper {
       where: 'name LIKE ?',
       whereArgs: ['%$query%'],
     );
-    
     return List.generate(maps.length, (i) {
       return Habit.fromMap(maps[i]);
     });
   }
 
+  // Close database
   Future<void> close() async {
     final db = await database;
     db.close();

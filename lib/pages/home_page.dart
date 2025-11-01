@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/habit.dart';
 import '../database/database_helper.dart';
 import '../services/habit_auto_check_service.dart';
+import '../widgets/notes_dialog.dart';
 import 'add_habit_page.dart';
 import 'habit_detail_page.dart';
 

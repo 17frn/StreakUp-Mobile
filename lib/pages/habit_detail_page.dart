@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/habit.dart';
 import '../database/database_helper.dart';
-import '../services/habit_auto_check_service.dart';
 import 'habit_time_settings_page.dart';
 
 class HabitDetailPage extends StatefulWidget {
@@ -16,8 +15,6 @@ class HabitDetailPage extends StatefulWidget {
 class _HabitDetailPageState extends State<HabitDetailPage> {
   late Habit _habit;
   final DatabaseHelper _dbHelper = DatabaseHelper();
-  // final HabitAutoCheckService _autoCheckService = HabitAutoCheckService();
-  // String _remainingTimeText = '';
 
   @override
   void initState() {
@@ -29,12 +26,8 @@ class _HabitDetailPageState extends State<HabitDetailPage> {
   Future<void> _loadHabit() async {
     final habit = await _dbHelper.getHabit(widget.habit.id!);
     if (habit != null && mounted) {
-      // await _autoCheckService.autoCheckHabit(habit);
-
-      // final remaining = _autoCheckService.getRemainingTime(habit);
       setState(() {
         _habit = habit;
-        //_remainingTimeText = remaining;
       });
     }
   }
@@ -79,7 +72,7 @@ class _HabitDetailPageState extends State<HabitDetailPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detail'),
+        title: const Text('Detail Habit'),
         centerTitle: true,
         actions: [
           IconButton(
@@ -264,6 +257,20 @@ class _HabitDetailPageState extends State<HabitDetailPage> {
                   ),
                   const SizedBox(height: 12),
                   _buildCalendarGrid(),
+                  
+                  // Notes History Section
+                  if (_habit.notes.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    const Text(
+                      '📝 Catatan',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildNotesHistory(),
+                  ],
                 ],
               ),
             ),
@@ -369,6 +376,35 @@ class _HabitDetailPageState extends State<HabitDetailPage> {
                       color: Colors.white,
                     ),
                 ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // METHOD YANG DITAMBAHKAN - FIX ERROR
+  Widget _buildNotesHistory() {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _habit.notes.length,
+      itemBuilder: (context, index) {
+        final note = _habit.notes[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            leading: const Icon(
+              Icons.note,
+              color: Color(0xFF0077BE),
+            ),
+            title: Text(note ?? ''),
+            subtitle: Text(
+              'Catatan ${index + 1}',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
               ),
             ),
           ),

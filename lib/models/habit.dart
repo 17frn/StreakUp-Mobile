@@ -4,10 +4,11 @@ class Habit {
   final String description;
   final String icon;
   final List<String> completedDates;
-  final String? startTime; // Format: "HH:mm"
-  final String? endTime;   // Format: "HH:mm"
-  final bool notificationEnabled; // Notification on/off
-  final int reminderMinutes; // Minutes before start time
+  final String? startTime;
+  final String? endTime;
+  final bool notificationEnabled;
+  final int reminderMinutes;
+  final Map<String, String> notes; // ← INI YANG BARU
 
   Habit({
     this.id,
@@ -19,6 +20,7 @@ class Habit {
     this.endTime,
     this.notificationEnabled = false,
     this.reminderMinutes = 15,
+    this.notes = const {}, // ← INI YANG BARU
   });
 
   // Convert Habit object to Map for database
@@ -33,11 +35,27 @@ class Habit {
       'endTime': endTime,
       'notificationEnabled': notificationEnabled ? 1 : 0,
       'reminderMinutes': reminderMinutes,
+      'notes': notes.isEmpty ? '' : notes.entries.map((e) => '${e.key}|||${e.value}').join('###'), // ← INI YANG BARU
     };
   }
 
   // Create Habit object from Map (database result)
   factory Habit.fromMap(Map<String, dynamic> map) {
+    // Parse notes ← INI YANG BARU
+    Map<String, String> parsedNotes = {};
+    if (map['notes'] != null && map['notes'].toString().isNotEmpty) {
+      final notesStr = map['notes'].toString();
+      final entries = notesStr.split('###');
+      for (var entry in entries) {
+        if (entry.isNotEmpty) {
+          final parts = entry.split('|||');
+          if (parts.length == 2) {
+            parsedNotes[parts[0]] = parts[1];
+          }
+        }
+      }
+    }
+
     return Habit(
       id: map['id'],
       name: map['name'],
@@ -50,6 +68,7 @@ class Habit {
       endTime: map['endTime'],
       notificationEnabled: map['notificationEnabled'] == 1,
       reminderMinutes: map['reminderMinutes'] ?? 15,
+      notes: parsedNotes, // ← INI YANG BARU
     );
   }
 
@@ -64,6 +83,7 @@ class Habit {
     String? endTime,
     bool? notificationEnabled,
     int? reminderMinutes,
+    Map<String, String>? notes, // ← INI YANG BARU
   }) {
     return Habit(
       id: id ?? this.id,
@@ -75,6 +95,7 @@ class Habit {
       endTime: endTime ?? this.endTime,
       notificationEnabled: notificationEnabled ?? this.notificationEnabled,
       reminderMinutes: reminderMinutes ?? this.reminderMinutes,
+      notes: notes ?? this.notes, // ← INI YANG BARU
     );
   }
 
@@ -89,7 +110,6 @@ class Habit {
   int getCurrentStreak() {
     if (completedDates.isEmpty) return 0;
 
-    // Convert string dates to DateTime and sort descending
     final sortedDates = completedDates.map((dateStr) {
       final parts = dateStr.split('-');
       return DateTime(
@@ -102,8 +122,6 @@ class Habit {
 
     int streak = 0;
     DateTime checkDate = DateTime.now();
-    
-    // Normalize to start of day for comparison
     checkDate = DateTime(checkDate.year, checkDate.month, checkDate.day);
 
     for (var date in sortedDates) {
@@ -153,5 +171,18 @@ class Habit {
       ..sort((a, b) => b.compareTo(a));
 
     return sortedDates.first;
+  }
+
+  // ← METHODS BARU UNTUK NOTES
+  // Get note for specific date
+  String? getNoteForDate(DateTime date) {
+    final dateKey = '${date.year}-${date.month}-${date.day}';
+    return notes[dateKey];
+  }
+
+  // Check if has note for date
+  bool hasNoteForDate(DateTime date) {
+    final dateKey = '${date.year}-${date.month}-${date.day}';
+    return notes.containsKey(dateKey) && notes[dateKey]!.isNotEmpty;
   }
 }
