@@ -4,10 +4,10 @@ class Habit {
   final String description;
   final String icon;
   final List<String> completedDates;
-  final String? startTime; 
-  final String? endTime;   
-  final bool notificationEnabled; 
-  final int reminderMinutes; 
+  final String? startTime; // Format: "HH:mm"
+  final String? endTime;   // Format: "HH:mm"
+  final bool notificationEnabled; // Notification on/off
+  final int reminderMinutes; // Minutes before start time
 
   Habit({
     this.id,
@@ -21,6 +21,7 @@ class Habit {
     this.reminderMinutes = 15,
   });
 
+  // Convert Habit object to Map for database
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -30,12 +31,12 @@ class Habit {
       'completedDates': completedDates.join(','),
       'startTime': startTime,
       'endTime': endTime,
-      'notificationEnabled': notificationEnabled ? 1 : 0,  
+      'notificationEnabled': notificationEnabled ? 1 : 0,
       'reminderMinutes': reminderMinutes,
     };
   }
 
-  
+  // Create Habit object from Map (database result)
   factory Habit.fromMap(Map<String, dynamic> map) {
     return Habit(
       id: map['id'],
@@ -52,6 +53,7 @@ class Habit {
     );
   }
 
+  // Copy with method for updating habit
   Habit copyWith({
     int? id,
     String? name,
@@ -76,15 +78,18 @@ class Habit {
     );
   }
 
+  // Check if habit is completed today
   bool isCompletedToday() {
     final today = DateTime.now();
     final dateKey = '${today.year}-${today.month}-${today.day}';
     return completedDates.contains(dateKey);
   }
 
+  // Get current streak (consecutive days)
   int getCurrentStreak() {
     if (completedDates.isEmpty) return 0;
 
+    // Convert string dates to DateTime and sort descending
     final sortedDates = completedDates.map((dateStr) {
       final parts = dateStr.split('-');
       return DateTime(
@@ -98,6 +103,7 @@ class Habit {
     int streak = 0;
     DateTime checkDate = DateTime.now();
     
+    // Normalize to start of day for comparison
     checkDate = DateTime(checkDate.year, checkDate.month, checkDate.day);
 
     for (var date in sortedDates) {
@@ -115,20 +121,24 @@ class Habit {
     return streak;
   }
 
+  // Get total completions count
   int getTotalCompletions() {
     return completedDates.length;
   }
 
+  // Get completion rate (percentage)
   double getCompletionRate({int days = 30}) {
     if (completedDates.isEmpty) return 0.0;
     return (completedDates.length / days * 100).clamp(0.0, 100.0);
   }
 
+  // Check if completed on specific date
   bool isCompletedOnDate(DateTime date) {
     final dateKey = '${date.year}-${date.month}-${date.day}';
     return completedDates.contains(dateKey);
   }
 
+  // Get last completion date
   DateTime? getLastCompletionDate() {
     if (completedDates.isEmpty) return null;
     
