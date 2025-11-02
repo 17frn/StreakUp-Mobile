@@ -49,15 +49,61 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _toggleHabit(Habit habit) async {
     final dateKey = '${_selectedDate.year}-${_selectedDate.month}-${_selectedDate.day}';
+    final wasCompleted = habit.completedDates.contains(dateKey);
     
+    print('🔄 Toggle habit: ${habit.name}');
+    print('📅 Date key: $dateKey');
+    print('✅ Was completed: $wasCompleted');
+    
+    // Toggle completion
     final updatedHabit = habit.copyWith(
-      completedDates: habit.completedDates.contains(dateKey)
+      completedDates: wasCompleted
           ? habit.completedDates.where((d) => d != dateKey).toList()
           : [...habit.completedDates, dateKey],
     );
 
     await _dbHelper.updateHabit(updatedHabit);
     await _loadHabits();
+
+    // Show notes dialog ONLY if:
+    // 1. Marking as complete (not uncomplete)
+    // 2. Context is still mounted
+    if (!wasCompleted && mounted) {
+      print('📝 Showing notes dialog...');
+      
+      // Add small delay to ensure UI is updated
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      if (mounted) {
+        _showNotesDialog(updatedHabit, dateKey);
+      }
+    } else {
+      print('⏭️ Skipping notes dialog (wasCompleted: $wasCompleted, mounted: $mounted)');
+    }
+  }
+
+  Future<void> _showNotesDialog(Habit habit, String dateKey) async {
+    final note = await showDialog<String>(
+      context: context,
+      barrierDismissible: true, // Can dismiss by tapping outside
+      builder: (context) => NotesDialog(
+        habitName: habit.name,
+        habitIcon: habit.icon,
+        existingNote: habit.notes[dateKey],
+      ),
+    );
+
+    // Only save if note is not null (user didn't cancel)
+    if (note != null && mounted) {
+      final newNotes = Map<String, String>.from(habit.notes);
+      if (note.isNotEmpty) {
+        newNotes[dateKey] = note;
+      }
+      
+      final updatedHabit = habit.copyWith(notes: newNotes);
+      await _dbHelper.updateHabit(updatedHabit);
+      await _loadHabits();
+    }
   }
 
   void _navigateToAddHabit() async {
@@ -145,15 +191,51 @@ class _HomePageState extends State<HomePage> {
                       letterSpacing: 0.4,
                     ),
                   ),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0077BE),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.add, color: Colors.white),
-                      onPressed: _navigateToAddHabit,
-                    ),
+                  Row(
+                    children: [
+                      // Test Button (for debugging)
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.orange,
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.bug_report, color: Colors.white),
+                          tooltip: 'Test Notes Dialog',
+                          onPressed: () async {
+                            print('🧪 Testing notes dialog...');
+                            final note = await showDialog<String>(
+                              context: context,
+                              builder: (context) => NotesDialog(
+                                habitName: 'Test Habit',
+                                habitIcon: '🎯',
+                                existingNote: null,
+                              ),
+                            );
+                            print('📝 Note result: $note');
+                            if (note != null && note.isNotEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Note saved: $note'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0077BE),
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.add, color: Colors.white),
+                          onPressed: _navigateToAddHabit,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
