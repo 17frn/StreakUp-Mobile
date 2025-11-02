@@ -31,6 +31,7 @@ Projek gabut yang gw bikin sekalian belajar flutter, masih tahap prototipe.
 🔧 **Tahap:** Prototipe  
 💡 **Rencana Pengembangan Berikutnya:**
 - ~~Penambahan notifikasi pengingat~~
+- ~~Widget notes~~
 - Statistik mingguan  
 - Sinkronisasi data (opsional, bila versi online dirilis)
 - Dark mode support
