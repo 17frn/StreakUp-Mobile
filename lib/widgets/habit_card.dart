@@ -25,8 +25,7 @@ class HabitCard extends StatelessWidget {
     final hasTimeSet = habit.startTime != null && habit.endTime != null;
     final isWithinTime = hasTimeSet && autoCheckService.isWithinTimeRange(habit);
     final remainingTime = hasTimeSet ? autoCheckService.getRemainingTime(habit) : '';
-    final hasNoteToday = habit.hasNoteForDate(DateTime.now());
-
+    
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(

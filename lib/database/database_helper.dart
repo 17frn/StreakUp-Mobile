@@ -25,13 +25,13 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'habit_tracker.db');
     return await openDatabase(
       path,
-      version: 2, // UPDATED VERSION - untuk trigger upgrade
+      version: 2, // UPGRADED VERSION untuk migration
       onCreate: _onCreate,
-      onUpgrade: _onUpgrade, // ADDED - untuk upgrade dari versi lama
+      onUpgrade: _onUpgrade,
     );
   }
 
-  // Create tables
+  // Create tables (untuk database baru)
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE habits(
@@ -49,12 +49,10 @@ class DatabaseHelper {
     ''');
   }
 
-  // Upgrade database - ADDED
+  // Migration untuk database yang sudah ada
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      // Add missing columns for version 2
-      await db.execute('ALTER TABLE habits ADD COLUMN notificationEnabled INTEGER DEFAULT 0');
-      await db.execute('ALTER TABLE habits ADD COLUMN reminderMinutes INTEGER DEFAULT 15');
+      // Tambah kolom notes jika belum ada
       await db.execute('ALTER TABLE habits ADD COLUMN notes TEXT');
     }
   }

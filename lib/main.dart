@@ -25,12 +25,12 @@ class HabitTrackerApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        primaryColor: const Color(0xFF0077BE), // Biru laut
+        primaryColor: const Color(0xFF0077BE),
         scaffoldBackgroundColor: Colors.white,
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF0077BE),
           primary: const Color(0xFF0077BE),
-          secondary: const Color(0xFF87CEEB), // Biru muda
+          secondary: const Color(0xFF87CEEB),
         ),
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFF0077BE),

@@ -259,18 +259,16 @@ class _HabitDetailPageState extends State<HabitDetailPage> {
                   _buildCalendarGrid(),
                   
                   // Notes History Section
-                  if (_habit.notes.isNotEmpty) ...[
-                    const SizedBox(height: 24),
-                    const Text(
-                      '📝 Catatan',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    '📝 Catatan',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 12),
-                    _buildNotesHistory(),
-                  ],
+                  ),
+                  const SizedBox(height: 12),
+                  _buildNotesHistory(),
                 ],
               ),
             ),
@@ -384,28 +382,145 @@ class _HabitDetailPageState extends State<HabitDetailPage> {
     );
   }
 
-  // METHOD YANG DITAMBAHKAN - FIX ERROR
   Widget _buildNotesHistory() {
+    final sortedNotes = _habit.getSortedNotes();
+    
+    if (sortedNotes.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Center(
+            child: Column(
+              children: [
+                Icon(
+                  Icons.note_outlined,
+                  size: 48,
+                  color: Colors.grey[300],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Belum ada catatan',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _habit.notes.length,
+      itemCount: sortedNotes.length,
       itemBuilder: (context, index) {
-        final note = _habit.notes[index];
+        final entry = sortedNotes[index];
+        final dateKey = entry.key;
+        final note = entry.value;
+        
+        // Parse date from key (format: "2024-11-2")
+        final parts = dateKey.split('-');
+        final date = DateTime(
+          int.parse(parts[0]),
+          int.parse(parts[1]),
+          int.parse(parts[2]),
+        );
+        
+        // Format tanggal
+        final months = [
+          'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+          'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+        ];
+        final formattedDate = '${date.day} ${months[date.month - 1]} ${date.year}';
+        
         return Card(
           margin: const EdgeInsets.only(bottom: 8),
           child: ListTile(
-            leading: const Icon(
-              Icons.note,
-              color: Color(0xFF0077BE),
-            ),
-            title: Text(note ?? ''),
-            subtitle: Text(
-              'Catatan ${index + 1}',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
+            leading: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFF0077BE).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
               ),
+              child: const Icon(
+                Icons.note,
+                color: Color(0xFF0077BE),
+                size: 20,
+              ),
+            ),
+            title: Text(
+              note,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                formattedDate,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ),
+            trailing: IconButton(
+              icon: Icon(
+                Icons.delete_outline,
+                color: Colors.grey[400],
+                size: 20,
+              ),
+              onPressed: () async {
+                // Confirm delete
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Hapus Catatan?'),
+                    content: const Text('Catatan ini akan dihapus permanen.'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Batal'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.red,
+                        ),
+                        child: const Text('Hapus'),
+                      ),
+                    ],
+                  ),
+                );
+                
+                if (confirm == true) {
+                  final newNotes = Map<String, String>.from(_habit.notes);
+                  newNotes.remove(dateKey);
+                  
+                  final updatedHabit = _habit.copyWith(notes: newNotes);
+                  await _dbHelper.updateHabit(updatedHabit);
+                  setState(() {
+                    _habit = updatedHabit;
+                  });
+                  
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Catatan dihapus'),
+                        backgroundColor: Colors.orange,
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                }
+              },
             ),
           ),
         );

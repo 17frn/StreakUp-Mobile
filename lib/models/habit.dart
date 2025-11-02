@@ -1,14 +1,16 @@
+import 'dart:convert';
+
 class Habit {
   final int? id;
   final String name;
   final String description;
   final String icon;
   final List<String> completedDates;
-  final String? startTime;
-  final String? endTime;
-  final bool notificationEnabled;
-  final int reminderMinutes;
-  final Map<String, String> notes; // ← INI YANG BARU
+  final String? startTime; // Format: "HH:mm"
+  final String? endTime;   // Format: "HH:mm"
+  final bool notificationEnabled; // Notification on/off
+  final int reminderMinutes; // Minutes before start time
+  final Map<String, String> notes; // Date -> Note mapping
 
   Habit({
     this.id,
@@ -20,7 +22,7 @@ class Habit {
     this.endTime,
     this.notificationEnabled = false,
     this.reminderMinutes = 15,
-    this.notes = const {}, // ← INI YANG BARU
+    this.notes = const {},
   });
 
   // Convert Habit object to Map for database
@@ -35,24 +37,19 @@ class Habit {
       'endTime': endTime,
       'notificationEnabled': notificationEnabled ? 1 : 0,
       'reminderMinutes': reminderMinutes,
-      'notes': notes.isEmpty ? '' : notes.entries.map((e) => '${e.key}|||${e.value}').join('###'), // ← INI YANG BARU
+      'notes': jsonEncode(notes), // Store as JSON string
     };
   }
 
   // Create Habit object from Map (database result)
   factory Habit.fromMap(Map<String, dynamic> map) {
-    // Parse notes ← INI YANG BARU
-    Map<String, String> parsedNotes = {};
+    Map<String, String> notesMap = {};
     if (map['notes'] != null && map['notes'].toString().isNotEmpty) {
-      final notesStr = map['notes'].toString();
-      final entries = notesStr.split('###');
-      for (var entry in entries) {
-        if (entry.isNotEmpty) {
-          final parts = entry.split('|||');
-          if (parts.length == 2) {
-            parsedNotes[parts[0]] = parts[1];
-          }
-        }
+      try {
+        final decoded = jsonDecode(map['notes']);
+        notesMap = Map<String, String>.from(decoded);
+      } catch (e) {
+        print('Error parsing notes: $e');
       }
     }
 
@@ -68,7 +65,7 @@ class Habit {
       endTime: map['endTime'],
       notificationEnabled: map['notificationEnabled'] == 1,
       reminderMinutes: map['reminderMinutes'] ?? 15,
-      notes: parsedNotes, // ← INI YANG BARU
+      notes: notesMap,
     );
   }
 
@@ -83,7 +80,7 @@ class Habit {
     String? endTime,
     bool? notificationEnabled,
     int? reminderMinutes,
-    Map<String, String>? notes, // ← INI YANG BARU
+    Map<String, String>? notes,
   }) {
     return Habit(
       id: id ?? this.id,
@@ -95,7 +92,7 @@ class Habit {
       endTime: endTime ?? this.endTime,
       notificationEnabled: notificationEnabled ?? this.notificationEnabled,
       reminderMinutes: reminderMinutes ?? this.reminderMinutes,
-      notes: notes ?? this.notes, // ← INI YANG BARU
+      notes: notes ?? this.notes,
     );
   }
 
@@ -110,6 +107,7 @@ class Habit {
   int getCurrentStreak() {
     if (completedDates.isEmpty) return 0;
 
+    // Convert string dates to DateTime and sort descending
     final sortedDates = completedDates.map((dateStr) {
       final parts = dateStr.split('-');
       return DateTime(
@@ -122,6 +120,8 @@ class Habit {
 
     int streak = 0;
     DateTime checkDate = DateTime.now();
+    
+    // Normalize to start of day for comparison
     checkDate = DateTime(checkDate.year, checkDate.month, checkDate.day);
 
     for (var date in sortedDates) {
@@ -173,16 +173,20 @@ class Habit {
     return sortedDates.first;
   }
 
-  // ← METHODS BARU UNTUK NOTES
   // Get note for specific date
   String? getNoteForDate(DateTime date) {
     final dateKey = '${date.year}-${date.month}-${date.day}';
     return notes[dateKey];
   }
 
-  // Check if has note for date
-  bool hasNoteForDate(DateTime date) {
-    final dateKey = '${date.year}-${date.month}-${date.day}';
-    return notes.containsKey(dateKey) && notes[dateKey]!.isNotEmpty;
+  // Get all notes sorted by date (newest first)
+  List<MapEntry<String, String>> getSortedNotes() {
+    final entries = notes.entries.toList();
+    entries.sort((a, b) {
+      final dateA = DateTime.parse(a.key.replaceAll('-', ''));
+      final dateB = DateTime.parse(b.key.replaceAll('-', ''));
+      return dateB.compareTo(dateA);
+    });
+    return entries;
   }
 }

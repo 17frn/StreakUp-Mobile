@@ -1,12 +1,18 @@
 import '../models/habit.dart';
 import '../database/database_helper.dart';
 
+// Typedef untuk callback function
+typedef OnHabitAutoCompleted = void Function(Habit habit, String dateKey);
+
 class HabitAutoCheckService {
   static final HabitAutoCheckService _instance = HabitAutoCheckService._internal();
   factory HabitAutoCheckService() => _instance;
   HabitAutoCheckService._internal();
 
   final DatabaseHelper _dbHelper = DatabaseHelper();
+  
+  // Callback yang akan dipanggil saat habit auto-completed
+  OnHabitAutoCompleted? onHabitAutoCompleted;
 
   /// Check if current time is within habit's time range
   bool isWithinTimeRange(Habit habit) {
@@ -32,9 +38,11 @@ class HabitAutoCheckService {
   }
 
   /// Auto-complete habit if within time range and not yet completed today
-  Future<void> autoCheckHabit(Habit habit) async {
-    if (!isWithinTimeRange(habit)) return;
-    if (habit.isCompletedToday()) return;
+  Future<bool> autoCheckHabit(Habit habit) async {
+    if (!isWithinTimeRange(habit)) return false;
+    if (habit.isCompletedToday()) return false;
+
+    print('🤖 Auto-completing habit: ${habit.name}');
 
     final today = DateTime.now();
     final dateKey = '${today.year}-${today.month}-${today.day}';
@@ -44,12 +52,19 @@ class HabitAutoCheckService {
     );
 
     await _dbHelper.updateHabit(updatedHabit);
+
+    // Trigger callback jika ada
+    if (onHabitAutoCompleted != null) {
+      print('📢 Triggering callback for: ${habit.name}');
+      onHabitAutoCompleted!(updatedHabit, dateKey);
+    }
+
+    return true; // Return true jika habit auto-completed
   }
 
   /// Check all habits and auto-complete if needed
   Future<void> checkAllHabits() async {
     final habits = await _dbHelper.getHabits();
-    
     for (var habit in habits) {
       if (habit.startTime != null && habit.endTime != null) {
         await autoCheckHabit(habit);

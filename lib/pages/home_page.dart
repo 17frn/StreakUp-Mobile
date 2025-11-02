@@ -24,8 +24,24 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    _setupAutoCheckCallback();
     _loadHabits();
     _startAutoCheck();
+  }
+
+  // Setup callback untuk auto-complete
+  void _setupAutoCheckCallback() {
+    _autoCheckService.onHabitAutoCompleted = (habit, dateKey) {
+      print('🎉 Habit auto-completed: ${habit.name}');
+      print('📝 Should show notes dialog...');
+      
+      // Show dialog notes di frame berikutnya
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _showNotesDialog(habit, dateKey);
+        }
+      });
+    };
   }
 
   void _startAutoCheck() {
@@ -69,7 +85,7 @@ class _HomePageState extends State<HomePage> {
     // 1. Marking as complete (not uncomplete)
     // 2. Context is still mounted
     if (!wasCompleted && mounted) {
-      print('📝 Showing notes dialog...');
+      print('📝 Showing notes dialog (manual toggle)...');
       
       // Add small delay to ensure UI is updated
       await Future.delayed(const Duration(milliseconds: 100));
@@ -83,6 +99,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _showNotesDialog(Habit habit, String dateKey) async {
+    print('🎬 Opening notes dialog for: ${habit.name}');
+    
     final note = await showDialog<String>(
       context: context,
       barrierDismissible: true, // Can dismiss by tapping outside
@@ -93,16 +111,29 @@ class _HomePageState extends State<HomePage> {
       ),
     );
 
+    print('📝 Notes dialog result: $note');
+
     // Only save if note is not null (user didn't cancel)
     if (note != null && mounted) {
       final newNotes = Map<String, String>.from(habit.notes);
       if (note.isNotEmpty) {
         newNotes[dateKey] = note;
+        print('💾 Saving note: $note');
       }
       
       final updatedHabit = habit.copyWith(notes: newNotes);
       await _dbHelper.updateHabit(updatedHabit);
       await _loadHabits();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(note.isEmpty ? 'Habit selesai!' : 'Catatan tersimpan!'),
+            backgroundColor: const Color(0xFF4CAF50),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 
@@ -191,52 +222,6 @@ class _HomePageState extends State<HomePage> {
                       letterSpacing: 0.4,
                     ),
                   ),
-                  Row(
-                    children: [
-                      // Test Button (for debugging)
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.orange,
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(Icons.bug_report, color: Colors.white),
-                          tooltip: 'Test Notes Dialog',
-                          onPressed: () async {
-                            print('🧪 Testing notes dialog...');
-                            final note = await showDialog<String>(
-                              context: context,
-                              builder: (context) => NotesDialog(
-                                habitName: 'Test Habit',
-                                habitIcon: '🎯',
-                                existingNote: null,
-                              ),
-                            );
-                            print('📝 Note result: $note');
-                            if (note != null && note.isNotEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Note saved: $note'),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            }
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0077BE),
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(Icons.add, color: Colors.white),
-                          onPressed: _navigateToAddHabit,
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ),
             ),
@@ -296,8 +281,6 @@ class _HomePageState extends State<HomePage> {
                       date.month == DateTime.now().month;
                   
                   final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                  final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
                   return GestureDetector(
                     onTap: () {
@@ -332,7 +315,7 @@ class _HomePageState extends State<HomePage> {
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: const Text(
-                                'July',
+                                'Today',
                                 style: TextStyle(
                                   fontSize: 10,
                                   color: Colors.white,
@@ -503,6 +486,16 @@ class _HomePageState extends State<HomePage> {
                         ),
             ),
           ],
+        ),
+      ),
+      // FloatingActionButton di pojok kanan bawah
+      floatingActionButton: FloatingActionButton(
+        onPressed: _navigateToAddHabit,
+        backgroundColor: const Color(0xFF0077BE),
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+          size: 28,
         ),
       ),
     );
