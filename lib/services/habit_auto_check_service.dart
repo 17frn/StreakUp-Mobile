@@ -1,7 +1,6 @@
 import '../models/habit.dart';
 import '../database/database_helper.dart';
 
-// Typedef untuk callback function
 typedef OnHabitAutoCompleted = void Function(Habit habit, String dateKey);
 
 class HabitAutoCheckService {
@@ -11,10 +10,8 @@ class HabitAutoCheckService {
 
   final DatabaseHelper _dbHelper = DatabaseHelper();
   
-  // Callback yang akan dipanggil saat habit auto-completed
   OnHabitAutoCompleted? onHabitAutoCompleted;
 
-  /// Check if current time is within habit's time range
   bool isWithinTimeRange(Habit habit) {
     if (habit.startTime == null || habit.endTime == null) {
       return false;
@@ -29,7 +26,6 @@ class HabitAutoCheckService {
     final endParts = habit.endTime!.split(':');
     final endMinutes = int.parse(endParts[0]) * 60 + int.parse(endParts[1]);
 
-    // Handle case where end time is on next day (e.g., 23:00 - 01:00)
     if (endMinutes < startMinutes) {
       return currentMinutes >= startMinutes || currentMinutes <= endMinutes;
     }
@@ -37,7 +33,6 @@ class HabitAutoCheckService {
     return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
   }
 
-  /// Auto-complete habit if within time range and not yet completed today
   Future<bool> autoCheckHabit(Habit habit) async {
     if (!isWithinTimeRange(habit)) return false;
     if (habit.isCompletedToday()) return false;
@@ -53,16 +48,14 @@ class HabitAutoCheckService {
 
     await _dbHelper.updateHabit(updatedHabit);
 
-    // Trigger callback jika ada
     if (onHabitAutoCompleted != null) {
       print('📢 Triggering callback for: ${habit.name}');
       onHabitAutoCompleted!(updatedHabit, dateKey);
     }
 
-    return true; // Return true jika habit auto-completed
+    return true;
   }
 
-  /// Check all habits and auto-complete if needed
   Future<void> checkAllHabits() async {
     final habits = await _dbHelper.getHabits();
     for (var habit in habits) {
@@ -72,7 +65,6 @@ class HabitAutoCheckService {
     }
   }
 
-  /// Get time until next check (in milliseconds)
   int getNextCheckDelay() {
     final now = DateTime.now();
     final nextMinute = DateTime(
@@ -85,7 +77,6 @@ class HabitAutoCheckService {
     return nextMinute.difference(now).inMilliseconds;
   }
 
-  /// Calculate remaining time for habit
   String getRemainingTime(Habit habit) {
     if (habit.endTime == null) return '';
 
@@ -102,7 +93,6 @@ class HabitAutoCheckService {
       endMinute,
     );
 
-    // If end time already passed today, it's for tomorrow
     if (endDateTime.isBefore(now)) {
       endDateTime = endDateTime.add(const Duration(days: 1));
     }
@@ -120,7 +110,6 @@ class HabitAutoCheckService {
     }
   }
 
-  /// Check if habit should show reminder
   bool shouldShowReminder(Habit habit) {
     if (habit.endTime == null) return false;
     if (habit.isCompletedToday()) return false;
@@ -138,12 +127,10 @@ class HabitAutoCheckService {
       endMinute,
     );
 
-    // If end time already passed today, it's for tomorrow
     if (endDateTime.isBefore(now)) {
       return false;
     }
 
-    // Show reminder 1 hour before end time
     final reminderTime = endDateTime.subtract(const Duration(hours: 1));
     return now.isAfter(reminderTime) && now.isBefore(endDateTime);
   }

@@ -136,7 +136,6 @@ class _HabitDetailPageState extends State<HabitDetailPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Time Info Card (if time is set)
                   if (_habit.startTime != null || _habit.endTime != null)
                     Card(
                       color: const Color(0xFF87CEEB).withOpacity(0.1),
@@ -258,7 +257,6 @@ class _HabitDetailPageState extends State<HabitDetailPage> {
                   const SizedBox(height: 12),
                   _buildCalendarGrid(),
                   
-                  // Notes History Section
                   const SizedBox(height: 24),
                   const Text(
                     '📝 Catatan',
@@ -421,7 +419,6 @@ class _HabitDetailPageState extends State<HabitDetailPage> {
         final dateKey = entry.key;
         final note = entry.value;
         
-        // Parse date from key (format: "2024-11-2")
         final parts = dateKey.split('-');
         final date = DateTime(
           int.parse(parts[0]),
@@ -429,7 +426,6 @@ class _HabitDetailPageState extends State<HabitDetailPage> {
           int.parse(parts[2]),
         );
         
-        // Format tanggal
         final months = [
           'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
           'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
@@ -478,7 +474,6 @@ class _HabitDetailPageState extends State<HabitDetailPage> {
                 size: 20,
               ),
               onPressed: () async {
-                // Confirm delete
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(

@@ -17,22 +17,11 @@ class _AddHabitPageState extends State<AddHabitPage> {
   
   String _selectedIcon = '🎯';
   final List<String> _icons = [
-    // Fitness & Health
     '🎯', '💪', '🏃', '🧘', '🚴', '⛹️', '🏊', '🤸',
-    
-    // Learning & Productivity
     '📚', '✍️', '📖', '💻', '📝',
-    
-    // Creative & Hobbies
     '🎨', '🎸', '🎬', '📷', '🎮', '🧩',
-    
-    // Social & Spiritual
     '📿', '💝', '🤝',
-    
-    // Daily Habits
     '☕', '🌅', '🌙', '🔔', '📅', '✅',
-    
-    // Nature & Environment
     '🌳','🌊', '🏔️',
   ];
 

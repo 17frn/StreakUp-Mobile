@@ -35,7 +35,6 @@ class HabitCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // Icon Container
               GestureDetector(
                 onTap: onToggle,
                 child: Container(
@@ -63,7 +62,6 @@ class HabitCard extends StatelessWidget {
               ),
               const SizedBox(width: 16),
               
-              // Habit Info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -114,7 +112,6 @@ class HabitCard extends StatelessWidget {
                           ],
                         ),
                       ),
-                    // Time Info
                     if (hasTimeSet)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
@@ -150,10 +147,8 @@ class HabitCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               
-              // Action Buttons
               Column(
                 children: [
-                  // Checkbox
                   GestureDetector(
                     onTap: onToggle,
                     child: Container(
@@ -174,7 +169,6 @@ class HabitCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   
-                  // Menu Button
                   PopupMenuButton<String>(
                     icon: Icon(
                       Icons.more_vert,

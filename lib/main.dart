@@ -8,7 +8,6 @@ import 'services/notification_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize notification
   await NotificationService().initialize();
   await NotificationService().requestPermission();
   
@@ -66,7 +65,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _pages = [
     const HomePage(),
     const StatisticsPage(),
-    const SettingsPage(), // Akan kita buat
+    const SettingsPage(),
   ];
 
   @override

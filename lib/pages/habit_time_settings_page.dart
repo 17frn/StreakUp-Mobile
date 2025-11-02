@@ -30,7 +30,6 @@ class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
   }
 
   void _loadSettings() {
-    // Load existing times if available
     if (widget.habit.startTime != null) {
       final parts = widget.habit.startTime!.split(':');
       _startTime = TimeOfDay(
@@ -46,7 +45,6 @@ class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
       );
     }
 
-    // Load notification settings
     _notificationEnabled = widget.habit.notificationEnabled;
     _reminderMinutes = widget.habit.reminderMinutes;
   }
@@ -109,7 +107,6 @@ class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
   }
 
   Future<void> _saveTimeSettings() async {
-    // Check if notification permission granted
     if (_notificationEnabled) {
       final hasPermission = await _notificationService.areNotificationsEnabled();
       if (!hasPermission) {
@@ -138,18 +135,15 @@ class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
 
     await _dbHelper.updateHabit(updatedHabit);
 
-    // Schedule notifications
     if (_notificationEnabled && _startTime != null) {
       await _notificationService.scheduleHabitReminder(
         habit: updatedHabit,
         minutesBefore: _reminderMinutes,
       );
     } else {
-      // Cancel notifications if disabled
       await _notificationService.cancelHabitNotifications(widget.habit.id!);
     }
 
-    // Schedule end reminder
     if (_endReminderEnabled && _endTime != null) {
       await _notificationService.scheduleHabitEndingReminder(
         habit: updatedHabit,
@@ -178,7 +172,6 @@ class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
 
     await _dbHelper.updateHabit(updatedHabit);
 
-    // Cancel all notifications
     await _notificationService.cancelHabitNotifications(widget.habit.id!);
 
     if (mounted) {
@@ -234,7 +227,6 @@ class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Habit Info Card
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -283,7 +275,6 @@ class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
             ),
             const SizedBox(height: 24),
 
-            // Info Box
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -314,7 +305,6 @@ class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
             ),
             const SizedBox(height: 24),
 
-            // Start Time
             const Text(
               'Waktu Mulai',
               style: TextStyle(
@@ -376,7 +366,6 @@ class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
             ),
             const SizedBox(height: 16),
 
-            // End Time
             const Text(
               'Waktu Selesai',
               style: TextStyle(
@@ -438,7 +427,6 @@ class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
             ),
             const SizedBox(height: 32),
 
-            // Notification Section
             const Divider(),
             const SizedBox(height: 16),
             
@@ -457,7 +445,6 @@ class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
             ),
             const SizedBox(height: 16),
 
-            // Enable Notification Switch
             Card(
               child: SwitchListTile(
                 title: const Text('Aktifkan Pengingat'),
@@ -473,7 +460,6 @@ class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
             ),
             const SizedBox(height: 12),
 
-            // Reminder Time Dropdown
             if (_notificationEnabled)
               Card(
                 child: Padding(
@@ -533,7 +519,6 @@ class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
 
             const SizedBox(height: 32),
 
-            // Save Button
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -554,7 +539,6 @@ class _HabitTimeSettingsPageState extends State<HabitTimeSettingsPage> {
             ),
             const SizedBox(height: 12),
 
-            // Clear Button
             if (_startTime != null || _endTime != null)
               SizedBox(
                 width: double.infinity,

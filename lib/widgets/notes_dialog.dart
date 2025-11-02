@@ -42,7 +42,6 @@ class _NotesDialogState extends State<NotesDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header
             Row(
               children: [
                 Container(
@@ -85,7 +84,6 @@ class _NotesDialogState extends State<NotesDialog> {
             ),
             const SizedBox(height: 20),
 
-            // Text Field
             TextField(
               controller: _noteController,
               maxLines: 4,
@@ -109,13 +107,12 @@ class _NotesDialogState extends State<NotesDialog> {
             ),
             const SizedBox(height: 20),
 
-            // Buttons
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () {
-                      Navigator.pop(context, null); // Skip
+                      Navigator.pop(context, null);
                     },
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),

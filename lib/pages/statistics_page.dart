@@ -80,7 +80,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             const Padding(
               padding: EdgeInsets.all(20),
               child: Text(

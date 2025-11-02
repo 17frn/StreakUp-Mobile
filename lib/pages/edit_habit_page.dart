@@ -19,19 +19,11 @@ class _EditHabitPageState extends State<EditHabitPage> {
   
   late String _selectedIcon;
   final List<String> _icons = [
-    // Fitness & Health
     '🎯', '💪', '🏃', '🧘', '🚴', '⛹️', '🏊', '🤸',
-    
-    // Learning & Productivity
     '📚', '✍️', '📖', '💻', '📝',
-    
-    // Creative & Hobbies
     '🎨', '🎵', '🎸', '🎬', '📷', '🎮', '🧩',
-    
     '📿','💝', '🤝',
-    
     '☕', '🌅', '🌙', '🔔','📅', '✅',
-    
     '🌳','🌊', '🏔️',
   ];
 

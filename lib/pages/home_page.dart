@@ -29,13 +29,11 @@ class _HomePageState extends State<HomePage> {
     _startAutoCheck();
   }
 
-  // Setup callback untuk auto-complete
   void _setupAutoCheckCallback() {
     _autoCheckService.onHabitAutoCompleted = (habit, dateKey) {
       print('🎉 Habit auto-completed: ${habit.name}');
       print('📝 Should show notes dialog...');
       
-      // Show dialog notes di frame berikutnya
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _showNotesDialog(habit, dateKey);
@@ -71,7 +69,6 @@ class _HomePageState extends State<HomePage> {
     print('📅 Date key: $dateKey');
     print('✅ Was completed: $wasCompleted');
     
-    // Toggle completion
     final updatedHabit = habit.copyWith(
       completedDates: wasCompleted
           ? habit.completedDates.where((d) => d != dateKey).toList()
@@ -81,13 +78,9 @@ class _HomePageState extends State<HomePage> {
     await _dbHelper.updateHabit(updatedHabit);
     await _loadHabits();
 
-    // Show notes dialog ONLY if:
-    // 1. Marking as complete (not uncomplete)
-    // 2. Context is still mounted
     if (!wasCompleted && mounted) {
       print('📝 Showing notes dialog (manual toggle)...');
       
-      // Add small delay to ensure UI is updated
       await Future.delayed(const Duration(milliseconds: 100));
       
       if (mounted) {
@@ -103,7 +96,7 @@ class _HomePageState extends State<HomePage> {
     
     final note = await showDialog<String>(
       context: context,
-      barrierDismissible: true, // Can dismiss by tapping outside
+      barrierDismissible: true,
       builder: (context) => NotesDialog(
         habitName: habit.name,
         habitIcon: habit.icon,
@@ -113,7 +106,6 @@ class _HomePageState extends State<HomePage> {
 
     print('📝 Notes dialog result: $note');
 
-    // Only save if note is not null (user didn't cancel)
     if (note != null && mounted) {
       final newNotes = Map<String, String>.from(habit.notes);
       if (note.isNotEmpty) {
@@ -208,7 +200,6 @@ class _HomePageState extends State<HomePage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header
             Padding(
               padding: const EdgeInsets.all(20),
               child: Row(
@@ -226,7 +217,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            // Tab Bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
@@ -249,7 +239,6 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(width: 20),
                   TextButton(
                     onPressed: () {
-                      // TODO: Navigate to manage page
                     },
                     child: Text(
                       'Manage',
@@ -266,7 +255,6 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 12),
 
-            // Calendar Week View
             SizedBox(
               height: 80,
               child: ListView.builder(
@@ -351,7 +339,6 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 20),
 
-            // Filter Chips
             SizedBox(
               height: 50,
               child: ListView(
@@ -369,7 +356,6 @@ class _HomePageState extends State<HomePage> {
 
             const SizedBox(height: 12),
 
-            // Habits List
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
@@ -419,7 +405,6 @@ class _HomePageState extends State<HomePage> {
                                 ),
                                 child: Row(
                                   children: [
-                                    // Checkbox
                                     GestureDetector(
                                       onTap: () => _toggleHabit(habit),
                                       child: Container(
@@ -442,7 +427,6 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                     const SizedBox(width: 16),
 
-                                    // Habit Info
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -472,7 +456,6 @@ class _HomePageState extends State<HomePage> {
                                       ),
                                     ),
 
-                                    // Arrow Icon
                                     Icon(
                                       Icons.chevron_right,
                                       color: Colors.grey[400],
@@ -488,7 +471,6 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-      // FloatingActionButton di pojok kanan bawah
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToAddHabit,
         backgroundColor: const Color(0xFF0077BE),

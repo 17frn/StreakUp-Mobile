@@ -71,7 +71,6 @@ class _SettingsPageState extends State<SettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             const Padding(
               padding: EdgeInsets.all(20),
               child: Text(
@@ -88,7 +87,6 @@ class _SettingsPageState extends State<SettingsPage> {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 children: [
-                  // Notifications Section
                   const Text(
                     'NOTIFICATIONS',
                     style: TextStyle(
@@ -122,7 +120,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
                   const SizedBox(height: 32),
 
-                  // Data Section
                   const Text(
                     'DATA & STORAGE',
                     style: TextStyle(
@@ -143,7 +140,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
                   const SizedBox(height: 32),
 
-                  // About Section
                   const Text(
                     'ABOUT',
                     style: TextStyle(
@@ -168,7 +164,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
                   const SizedBox(height: 32),
 
-                  // Additional Info
                   Center(
                     child: Column(
                       children: [
