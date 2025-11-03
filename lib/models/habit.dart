@@ -170,9 +170,27 @@ class Habit {
   List<MapEntry<String, String>> getSortedNotes() {
     final entries = notes.entries.toList();
     entries.sort((a, b) {
-      final dateA = DateTime.parse(a.key.replaceAll('-', ''));
-      final dateB = DateTime.parse(b.key.replaceAll('-', ''));
-      return dateB.compareTo(dateA);
+      try {
+        final partsA = a.key.split('-');
+        final partsB = b.key.split('-');
+        
+        final dateA = DateTime(
+          int.parse(partsA[0]),
+          int.parse(partsA[1]),
+          int.parse(partsA[2]),
+        );
+        
+        final dateB = DateTime(
+          int.parse(partsB[0]),
+          int.parse(partsB[1]),
+          int.parse(partsB[2]),
+        );
+        
+        return dateB.compareTo(dateA);
+      } catch (e) {
+        print('Error sorting notes: $e');
+        return 0;
+      }
     });
     return entries;
   }

@@ -3,8 +3,9 @@ import '../models/habit.dart';
 import '../database/database_helper.dart';
 import '../services/habit_auto_check_service.dart';
 import '../widgets/notes_dialog.dart';
+import '../widgets/daily_progress_card.dart';
+import '../widgets/habit_list_section.dart';
 import 'add_habit_page.dart';
-import 'habit_detail_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -65,10 +66,6 @@ class _HomePageState extends State<HomePage> {
     final dateKey = '${_selectedDate.year}-${_selectedDate.month}-${_selectedDate.day}';
     final wasCompleted = habit.completedDates.contains(dateKey);
     
-    print('🔄 Toggle habit: ${habit.name}');
-    print('📅 Date key: $dateKey');
-    print('✅ Was completed: $wasCompleted');
-    
     final updatedHabit = habit.copyWith(
       completedDates: wasCompleted
           ? habit.completedDates.where((d) => d != dateKey).toList()
@@ -79,21 +76,14 @@ class _HomePageState extends State<HomePage> {
     await _loadHabits();
 
     if (!wasCompleted && mounted) {
-      print('📝 Showing notes dialog (manual toggle)...');
-      
       await Future.delayed(const Duration(milliseconds: 100));
-      
       if (mounted) {
         _showNotesDialog(updatedHabit, dateKey);
       }
-    } else {
-      print('⏭️ Skipping notes dialog (wasCompleted: $wasCompleted, mounted: $mounted)');
     }
   }
 
   Future<void> _showNotesDialog(Habit habit, String dateKey) async {
-    print('🎬 Opening notes dialog for: ${habit.name}');
-    
     final note = await showDialog<String>(
       context: context,
       barrierDismissible: true,
@@ -104,13 +94,10 @@ class _HomePageState extends State<HomePage> {
       ),
     );
 
-    print('📝 Notes dialog result: $note');
-
     if (note != null && mounted) {
       final newNotes = Map<String, String>.from(habit.notes);
       if (note.isNotEmpty) {
         newNotes[dateKey] = note;
-        print('💾 Saving note: $note');
       }
       
       final updatedHabit = habit.copyWith(notes: newNotes);
@@ -133,18 +120,6 @@ class _HomePageState extends State<HomePage> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const AddHabitPage()),
-    );
-    if (result == true) {
-      await _loadHabits();
-    }
-  }
-
-  void _navigateToDetail(Habit habit) async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => HabitDetailPage(habit: habit),
-      ),
     );
     if (result == true) {
       await _loadHabits();
@@ -182,11 +157,6 @@ class _HomePageState extends State<HomePage> {
     }).toList();
   }
 
-  bool _isHabitCompletedOnDate(Habit habit, DateTime date) {
-    final dateKey = '${date.year}-${date.month}-${date.day}';
-    return habit.completedDates.contains(dateKey);
-  }
-
   @override
   Widget build(BuildContext context) {
     final weekDates = _getWeekDates();
@@ -197,288 +167,218 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Journal',
-                    style: TextStyle(
-                      fontSize: 34,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
+      body: Column(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF64B5F6),
+                  Color(0xFF42A5F5),
                 ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(30),
+                bottomRight: Radius.circular(30),
               ),
             ),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
+            child: SafeArea(
+              bottom: false,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _selectedDate = DateTime.now();
-                      });
-                    },
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(24, 20, 24, 16),
                     child: Text(
-                      'Today',
+                      'StreakUp',
                       style: TextStyle(
-                        fontSize: 16,
-                        color: isToday ? Colors.black : Colors.grey,
-                        fontWeight: isToday ? FontWeight.w600 : FontWeight.normal,
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 20),
-                  TextButton(
-                    onPressed: () {
-                    },
-                    child: Text(
-                      'Manage',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: !isToday ? const Color(0xFF0077BE) : Colors.grey,
-                        fontWeight: !isToday ? FontWeight.w600 : FontWeight.normal,
-                      ),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      children: [
+                        _buildTab('Today', isToday),
+                        const SizedBox(width: 32),
+                        _buildTab('Manage', !isToday),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
 
-            const SizedBox(height: 12),
+                  const SizedBox(height: 20),
 
-            SizedBox(
-              height: 80,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: weekDates.length,
-                itemBuilder: (context, index) {
-                  final date = weekDates[index];
-                  final isSelected = date.day == _selectedDate.day &&
-                      date.month == _selectedDate.month;
-                  final isCurrentDay = date.day == DateTime.now().day &&
-                      date.month == DateTime.now().month;
-                  
-                  final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                  Padding(
+                    padding: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
+                    child: SizedBox(
+                      height: 90,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: EdgeInsets.zero,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: weekDates.length,
+                        itemBuilder: (context, index) {
+                          final date = weekDates[index];
+                          final isSelected = date.day == _selectedDate.day &&
+                              date.month == _selectedDate.month;
+                          final isCurrentDay = date.day == DateTime.now().day &&
+                              date.month == DateTime.now().month;
+                          
+                          final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedDate = date;
-                      });
-                    },
-                    child: Container(
-                      width: 70,
-                      margin: const EdgeInsets.only(right: 8),
-                      decoration: BoxDecoration(
-                        color: isSelected ? const Color(0xFF0077BE) : Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isSelected 
-                              ? const Color(0xFF0077BE)
-                              : Colors.grey[300]!,
-                          width: 1,
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          if (isCurrentDay && !isSelected)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedDate = date;
+                              });
+                            },
+                            child: Container(
+                              width: 70,
+                              margin: EdgeInsets.only(right: index == weekDates.length - 1 ? 0 : 12),
                               decoration: BoxDecoration(
-                                color: Colors.orange[400],
-                                borderRadius: BorderRadius.circular(4),
+                                color: isSelected 
+                                    ? Colors.white 
+                                    : Colors.white.withOpacity(0.25),
+                                borderRadius: BorderRadius.circular(16),
                               ),
-                              child: const Text(
-                                'Today',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    weekdays[date.weekday - 1],
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: isSelected 
+                                          ? const Color(0xFF42A5F5)
+                                          : Colors.white.withOpacity(0.7),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${date.day}',
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: isSelected 
+                                          ? const Color(0xFF42A5F5)
+                                          : Colors.white,
+                                    ),
+                                  ),
+                                  if (isCurrentDay && !isSelected)
+                                    Container(
+                                      margin: const EdgeInsets.only(top: 4),
+                                      width: 6,
+                                      height: 6,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
-                          const SizedBox(height: 4),
-                          Text(
-                            weekdays[date.weekday - 1],
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: isSelected ? Colors.white : Colors.grey,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${date.day.toString().padLeft(2, '0')}',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: isSelected ? Colors.white : Colors.black,
-                            ),
-                          ),
-                        ],
+                          );
+                        },
                       ),
                     ),
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            SizedBox(
-              height: 50,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                children: [
-                  _buildFilterChip('☀️', 'Morning'),
-                  _buildFilterChip('☁️', 'Afternoon'),
-                  _buildFilterChip('🌙', 'Evening'),
-                  _buildFilterChip('⭐', 'Night'),
-                  _buildFilterChip('🔵', 'All Habit'),
+                  ),
                 ],
               ),
             ),
+          ),
 
-            const SizedBox(height: 12),
-
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : filteredHabits.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.event_available,
-                                size: 64,
-                                color: Colors.grey[300],
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Belum ada habit',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          itemCount: filteredHabits.length,
-                          itemBuilder: (context, index) {
-                            final habit = filteredHabits[index];
-                            final isCompleted = _isHabitCompletedOnDate(habit, _selectedDate);
-
-                            return GestureDetector(
-                              onTap: () => _navigateToDetail(habit),
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.04),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Row(
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () => _toggleHabit(habit),
-                                      child: Container(
-                                        width: 40,
-                                        height: 40,
-                                        decoration: BoxDecoration(
-                                          color: isCompleted
-                                              ? const Color(0xFF0077BE)
-                                              : Colors.grey[200],
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Icon(
-                                          Icons.check,
-                                          color: isCompleted
-                                              ? Colors.white
-                                              : Colors.grey[400],
-                                          size: 24,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            habit.name,
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w600,
-                                              color: isCompleted
-                                                  ? Colors.grey[500]
-                                                  : Colors.black,
-                                            ),
-                                          ),
-                                          if (habit.startTime != null)
-                                            Padding(
-                                              padding: const EdgeInsets.only(top: 4),
-                                              child: Text(
-                                                _formatTimeDisplay(habit.startTime!),
-                                                style: TextStyle(
-                                                  fontSize: 14,
-                                                  color: Colors.grey[600],
-                                                ),
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-
-                                    Icon(
-                                      Icons.chevron_right,
-                                      color: Colors.grey[400],
-                                      size: 24,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : Column(
+                    children: [
+                      Container(
+                        height: 50,
+                        margin: const EdgeInsets.only(top: 20),
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          physics: const BouncingScrollPhysics(),
+                          children: [
+                            _buildFilterChip('☀️', 'Morning'),
+                            _buildFilterChip('☁️', 'Afternoon'),
+                            _buildFilterChip('🌙', 'Evening'),
+                            _buildFilterChip('⭐', 'Night'),
+                            _buildFilterChip('🔵', 'All Habit'),
+                          ],
                         ),
-            ),
-          ],
-        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      HabitListSection(
+                        habits: filteredHabits,
+                        selectedDate: _selectedDate,
+                        onToggleHabit: _toggleHabit,
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      DailyProgressCard(
+                        selectedDate: _selectedDate,
+                        habits: _habits,
+                      ),
+
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToAddHabit,
-        backgroundColor: const Color(0xFF0077BE),
-        child: const Icon(
-          Icons.add,
-          color: Colors.white,
-          size: 28,
-        ),
+        backgroundColor: const Color(0xFF42A5F5),
+        elevation: 4,
+        child: const Icon(Icons.add, color: Colors.white, size: 28),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+    );
+  }
+
+  Widget _buildTab(String label, bool isActive) {
+    return GestureDetector(
+      onTap: () {
+        if (label == 'Today') {
+          setState(() {
+            _selectedDate = DateTime.now();
+          });
+        }
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              color: Colors.white,
+            ),
+          ),
+          if (isActive)
+            Container(
+              margin: const EdgeInsets.only(top: 4),
+              height: 3,
+              width: 30,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -496,46 +396,24 @@ class _HomePageState extends State<HomePage> {
         margin: const EdgeInsets.only(right: 12),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0077BE) : Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF0077BE) : Colors.grey[300]!,
-          ),
+          color: isSelected ? const Color(0xFF42A5F5) : Colors.grey[100],
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           children: [
-            Text(
-              emoji,
-              style: const TextStyle(fontSize: 16),
-            ),
+            Text(emoji, style: const TextStyle(fontSize: 16)),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : Colors.black,
+                color: isSelected ? Colors.white : Colors.black87,
               ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  String _formatTimeDisplay(String time) {
-    final parts = time.split(':');
-    final hour = int.parse(parts[0]);
-    final minute = parts[1];
-    
-    if (hour == 0) {
-      return '12:$minute AM';
-    } else if (hour < 12) {
-      return '$hour:$minute AM';
-    } else if (hour == 12) {
-      return '12:$minute PM';
-    } else {
-      return '${hour - 12}:$minute PM';
-    }
   }
 }
