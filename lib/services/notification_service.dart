@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -11,40 +13,70 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();
   bool _initialized = false;
 
+  /// Check if current platform supports full notification features
+  bool get _supportsLaunchDetails {
+    if (kIsWeb) return false;
+    return Platform.isAndroid || Platform.isIOS;
+  }
+
+  /// Check if platform supports notifications
+  bool get _supportsNotifications {
+    if (kIsWeb) return false;
+    return Platform.isAndroid || Platform.isIOS || Platform.isLinux || Platform.isMacOS || Platform.isWindows;
+  }
+
   /// Initialize notification service
   Future<void> initialize() async {
     if (_initialized) return;
+    if (!_supportsNotifications) {
+      print('⚠️ Notifications not supported on this platform');
+      return;
+    }
 
     // Initialize timezone FIRST
     tz.initializeTimeZones();
     
-    // Get device timezone
-    final String? timeZoneName = await FlutterLocalNotificationsPlugin()
-        .getNotificationAppLaunchDetails()
-        .then((_) {
-      // Try to get system timezone
-      try {
-        return tz.local.name;
-      } catch (e) {
-        return 'Asia/Jakarta'; // Fallback
-      }
-    });
+    // Get device timezone (safe for all platforms)
+    String timeZoneName = 'Asia/Jakarta'; // Default fallback
     
-    tz.setLocalLocation(tz.getLocation(timeZoneName ?? 'Asia/Jakarta'));
+    if (_supportsLaunchDetails) {
+      try {
+        // Only try to get launch details on supported platforms
+        await _notifications.getNotificationAppLaunchDetails();
+        timeZoneName = tz.local.name;
+      } catch (e) {
+        print('⚠️ Could not get launch details: $e');
+        timeZoneName = tz.local.name;
+      }
+    } else {
+      // For desktop platforms, just use local timezone
+      try {
+        timeZoneName = tz.local.name;
+      } catch (e) {
+        print('⚠️ Using fallback timezone');
+      }
+    }
+    
+    tz.setLocalLocation(tz.getLocation(timeZoneName));
 
-    // Android settings
+    // Platform-specific initialization settings
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     
-    // iOS settings
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
     );
 
+    const linuxSettings = LinuxInitializationSettings(
+      defaultActionName: 'Open notification',
+    );
+
     const initSettings = InitializationSettings(
       android: androidSettings,
       iOS: iosSettings,
+      macOS: iosSettings,
+      linux: linuxSettings,
     );
 
     await _notifications.initialize(
@@ -52,12 +84,27 @@ class NotificationService {
       onDidReceiveNotificationResponse: _onNotificationTap,
     );
 
-    // Request permissions immediately
-    await requestPermission();
+    // Request permissions only on mobile
+    if (_supportsLaunchDetails) {
+      await requestPermission();
+    }
 
     _initialized = true;
     
-    print('✅ Notification service initialized with timezone: ${tz.local.name}');
+    print('✅ Notification service initialized');
+    print('   Platform: ${_getPlatformName()}');
+    print('   Timezone: ${tz.local.name}');
+  }
+
+  /// Get platform name for logging
+  String _getPlatformName() {
+    if (kIsWeb) return 'Web';
+    if (Platform.isAndroid) return 'Android';
+    if (Platform.isIOS) return 'iOS';
+    if (Platform.isLinux) return 'Linux';
+    if (Platform.isMacOS) return 'macOS';
+    if (Platform.isWindows) return 'Windows';
+    return 'Unknown';
   }
 
   /// Handle notification tap
@@ -66,8 +113,12 @@ class NotificationService {
     print('Notification tapped: ${response.payload}');
   }
 
-  /// Request notification permission (Android 13+)
+  /// Request notification permission (Mobile only)
   Future<bool> requestPermission() async {
+    if (!_supportsLaunchDetails) {
+      return true; // Desktop doesn't need explicit permission
+    }
+
     final android = _notifications.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     
@@ -92,7 +143,7 @@ class NotificationService {
     required Habit habit,
     required int minutesBefore,
   }) async {
-    if (habit.startTime == null) return;
+    if (!_supportsNotifications || habit.startTime == null) return;
 
     await cancelHabitNotifications(habit.id!);
 
@@ -117,18 +168,36 @@ class NotificationService {
 
     final tzDateTime = tz.TZDateTime.from(reminderTime, tz.local);
 
-    await _notifications.zonedSchedule(
-      habit.id!, // Unique ID per habit
-      '⏰ Pengingat: ${habit.name}',
-      'Waktunya ${habit.name} dalam $minutesBefore menit!',
-      tzDateTime,
-      _notificationDetails(),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time, // Repeat daily
-      payload: 'habit_${habit.id}',
-    );
+    // Use different scheduling based on platform
+    if (Platform.isAndroid || Platform.isIOS) {
+      await _notifications.zonedSchedule(
+        habit.id!,
+        '⏰ Pengingat: ${habit.name}',
+        'Waktunya ${habit.name} dalam $minutesBefore menit!',
+        tzDateTime,
+        _notificationDetails(),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+        payload: 'habit_${habit.id}',
+      );
+    } else {
+      // For desktop, use simple show at specific time
+      await _notifications.zonedSchedule(
+        habit.id!,
+        '⏰ Pengingat: ${habit.name}',
+        'Waktunya ${habit.name} dalam $minutesBefore menit!',
+        tzDateTime,
+        _notificationDetails(),
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+        payload: 'habit_${habit.id}',
+      );
+    }
+
+    print('📅 Scheduled reminder for ${habit.name} at ${tzDateTime.toString()}');
   }
 
   /// Schedule notification before habit end time
@@ -136,7 +205,7 @@ class NotificationService {
     required Habit habit,
     required int minutesBefore,
   }) async {
-    if (habit.endTime == null) return;
+    if (!_supportsNotifications || habit.endTime == null) return;
 
     final parts = habit.endTime!.split(':');
     final hour = int.parse(parts[0]);
@@ -160,32 +229,51 @@ class NotificationService {
     final tzDateTime = tz.TZDateTime.from(reminderTime, tz.local);
 
     // Use different ID for end reminder (habit.id + 10000)
-    await _notifications.zonedSchedule(
-      habit.id! + 10000,
-      '⚠️ ${habit.name} akan berakhir!',
-      'Masih ada $minutesBefore menit untuk menyelesaikannya!',
-      tzDateTime,
-      _notificationDetails(),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time,
-      payload: 'habit_end_${habit.id}',
-    );
+    if (Platform.isAndroid || Platform.isIOS) {
+      await _notifications.zonedSchedule(
+        habit.id! + 10000,
+        '⚠️ ${habit.name} akan berakhir!',
+        'Masih ada $minutesBefore menit untuk menyelesaikannya!',
+        tzDateTime,
+        _notificationDetails(),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+        payload: 'habit_end_${habit.id}',
+      );
+    } else {
+      await _notifications.zonedSchedule(
+        habit.id! + 10000,
+        '⚠️ ${habit.name} akan berakhir!',
+        'Masih ada $minutesBefore menit untuk menyelesaikannya!',
+        tzDateTime,
+        _notificationDetails(),
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+        payload: 'habit_end_${habit.id}',
+      );
+    }
+
+    print('📅 Scheduled end reminder for ${habit.name} at ${tzDateTime.toString()}');
   }
 
   /// Cancel all notifications for a habit
   Future<void> cancelHabitNotifications(int habitId) async {
+    if (!_supportsNotifications) return;
+    
     await _notifications.cancel(habitId); // Start reminder
     await _notifications.cancel(habitId + 10000); // End reminder
   }
 
   /// Cancel all notifications
   Future<void> cancelAllNotifications() async {
+    if (!_supportsNotifications) return;
     await _notifications.cancelAll();
   }
 
-  /// Get notification details
+  /// Get notification details (platform-aware)
   NotificationDetails _notificationDetails() {
     const androidDetails = AndroidNotificationDetails(
       'habit_reminders',
@@ -209,22 +297,30 @@ class NotificationService {
       sound: 'default',
     );
 
+    const linuxDetails = LinuxNotificationDetails();
+
     return const NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
+      macOS: iosDetails,
+      linux: linuxDetails,
     );
   }
 
   /// Check if notifications are enabled
   Future<bool> areNotificationsEnabled() async {
-    final android = _notifications.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    if (!_supportsNotifications) return false;
     
-    if (android != null) {
-      return await android.areNotificationsEnabled() ?? false;
+    if (_supportsLaunchDetails) {
+      final android = _notifications.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      
+      if (android != null) {
+        return await android.areNotificationsEnabled() ?? false;
+      }
     }
     
-    return true;
+    return true; // Assume enabled on desktop/iOS
   }
 
   /// Show instant notification (for testing)
@@ -232,6 +328,11 @@ class NotificationService {
     required String title,
     required String body,
   }) async {
+    if (!_supportsNotifications) {
+      print('⚠️ Cannot show notification on this platform');
+      return;
+    }
+
     await _notifications.show(
       DateTime.now().millisecond,
       title,
@@ -242,6 +343,7 @@ class NotificationService {
 
   /// Get list of pending notifications (for debugging)
   Future<List<PendingNotificationRequest>> getPendingNotifications() async {
+    if (!_supportsNotifications) return [];
     return await _notifications.pendingNotificationRequests();
   }
 

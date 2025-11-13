@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'pages/home_page.dart';
-import 'pages/statistics_page.dart';
-import 'pages/settings_page.dart';
-import 'widgets/bottom_navigation.dart';
+import 'layouts/responsive_layout.dart';
 import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // Initialize services
   await NotificationService().initialize();
   await NotificationService().requestPermission();
   
@@ -47,42 +45,7 @@ class HabitTrackerApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const MainScreen(),
-    );
-  }
-}
-
-class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
-
-  @override
-  State<MainScreen> createState() => _MainScreenState();
-}
-
-class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0;
-  
-  final List<Widget> _pages = [
-    const HomePage(),
-    const StatisticsPage(),
-    const SettingsPage(),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
-      bottomNavigationBar: BottomNavigation(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-      ),
+      home: const ResponsiveLayout(),
     );
   }
 }
